@@ -9,6 +9,13 @@ const Container = styled.div`
   align-items: center;
   min-height: 100vh;
   flex-wrap: wrap;
+  > h3 {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
 `;
 
 const Canvas = styled.canvas`
@@ -22,50 +29,50 @@ export const Liveness = () => {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const animationFrameRef = useRef<number>();
   const [detection, setDetection] = useState("");
+  const isCalculated = useRef(false);
+  const isVertical = useRef(true);
+  const x = useRef(2);
 
   const snapshot = async () => {
     if (!canvasRef.current || !videoRef.current) return;
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx) return;
 
-    const { videoHeight, videoWidth } = videoRef.current;
-
-    let rectWidth = 0;
-
-    if (dimensions.width < dimensions.height) {
-      rectWidth = 0.75 * dimensions.width;
-      const x =
-        dimensions.height / (videoHeight / videoWidth) - dimensions.width;
+    if (!isCalculated.current && dimensions.width) {
+      isCalculated.current = true;
+      const { videoHeight, videoWidth } = videoRef.current;
+      console.log(dimensions);
+      if (dimensions.width < dimensions.height) {
+        console.log("isVertical.current = true");
+        x.current =
+          dimensions.height / (videoHeight / videoWidth) - dimensions.width;
+        isVertical.current = true;
+      } else {
+        console.log("isVertical.current = false");
+        isVertical.current = false;
+        x.current = Math.abs(
+          dimensions.width / (videoWidth / videoHeight) - dimensions.height
+        );
+      }
+    }
+    if (isVertical.current) {
       ctx.drawImage(
         videoRef.current,
-        -0.5 * x,
+        -0.5 * x.current,
         0,
-        dimensions.width + x,
+        dimensions.width + x.current,
         dimensions.height
       );
     } else {
-      rectWidth = 0.5 * dimensions.height;
-      const x = Math.abs(
-        dimensions.width / (videoWidth / videoHeight) - dimensions.height
-      );
       ctx.drawImage(
         videoRef.current,
         0,
-        -1 * x,
+        -1 * x.current,
         dimensions.width,
-        dimensions.height + x
+        dimensions.height + x.current
       );
     }
-
-    const rectHeight = 1.5 * rectWidth;
-
-    ctx.strokeRect(
-      (dimensions.width - rectWidth) / 2,
-      (dimensions.height - rectHeight) / 2,
-      rectWidth,
-      rectHeight
-    );
-    animationFrameRef.current = requestAnimationFrame(snapshot);
+    setTimeout(snapshot);
   };
 
   useEffect(() => {
@@ -79,11 +86,11 @@ export const Liveness = () => {
       .then((stream) => {
         if (!videoRef.current) return;
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        videoRef.current.play().then(snapshot);
 
-        if (animationFrameRef.current)
-          window.cancelAnimationFrame(animationFrameRef.current);
-        snapshot();
+        // if (animationFrameRef.current)
+        //   window.cancelAnimationFrame(animationFrameRef.current);
+        // snapshot();
       });
   }, [dimensions]);
 
