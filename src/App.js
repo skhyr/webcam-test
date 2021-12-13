@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
 import './App.css';
-import { Liveness } from './components/Liveness';
+import {Video} from './components/Video'
 
 const Container = styled.div`
   background-color: #101010;
@@ -10,7 +10,7 @@ const Container = styled.div`
 function App() {
   return (
     <Container >
-      <Liveness />
+      <Video />
     </Container>
   );
 }
